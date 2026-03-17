@@ -134,7 +134,8 @@ app.use((req, res) => {
 });
 
 
-app.listen(port, () => {
-  console.log(`🚀 Server ready on port ${port}`);
+const host = '0.0.0.0';
+app.listen(port, host, () => {
+  console.log(`🚀 Server ready on http://${host}:${port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

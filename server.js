@@ -25,11 +25,18 @@ app.get('/health', (req, res) => {
 
 // Check if dist exists
 const distPath = path.join(__dirname, 'dist');
+console.log('--- DIAGNOSTICS ---');
+console.log('Current directory:', __dirname);
+console.log('Files in current directory:', fs.readdirSync(__dirname));
+console.log('PORT env:', process.env.PORT);
+
 if (!fs.existsSync(distPath)) {
   console.warn('WARNING: dist folder NOT found at', distPath);
 } else {
   console.log('SUCCESS: dist folder found at', distPath);
+  console.log('Files in dist:', fs.readdirSync(distPath));
 }
+console.log('-------------------');
 
 app.post('/api/generate-flyer', async (req, res) => {
   try {

@@ -192,7 +192,22 @@ function App() {
               </button>
             </div>
             <div className="results-area">
-              {polishedFlyer}
+              {polishedFlyer.split(/(!\[.*?\]\(.*?\)|https?:\/\/[\w\-\._~:/?#[\]@!$&'()*+,;=%]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[\w\-\._~:/?#[\]@!$&'()*+,;=%]*)?)/i).map((part, i) => {
+                const imgMatch = part.match(/!\[.*?\]\((.*?)\)/) || [null, part.match(/^https?:\/\/.*?\.(?:png|jpg|jpeg|gif|webp)/i)?.[0]];
+                const url = imgMatch[1];
+                
+                if (url && (url.startsWith('http') || url.startsWith('https'))) {
+                  return (
+                    <div key={i} className="generated-image-container">
+                      <img src={url} alt="Generated Yoga Flyer" className="generated-flyer-image" />
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="download-link">
+                        Open Full Image
+                      </a>
+                    </div>
+                  );
+                }
+                return <p key={i} style={{ whiteSpace: 'pre-wrap', marginBottom: '1rem' }}>{part}</p>;
+              })}
             </div>
           </div>
         )}

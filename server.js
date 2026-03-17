@@ -40,23 +40,22 @@ app.post('/api/generate-flyer', async (req, res) => {
     });
 
     const systemPrompt = `You are a professional marketing specialist and yoga instructor assistant. 
-Your goal is to take rough, half-done flyer notes (and optionally an image of a flyer draft) and turn them into a polished, professional, and inviting yoga flyer content.
+Your goal is to turn rough flyer notes into a polished, professional, and inviting yoga flyer.
 
-Guidelines:
-- Maintain a ${tone || 'peaceful'} and professional tone.
-- Style should be appropriate for ${yogaStyle || 'General Yoga'}.
-- Structure the output clearly with:
-  1. A Catchy Title
-  2. A Short Inviting Description
-  3. Key Details (Date, Time, Location, What to Bring)
-  4. A clear Call to Action
-- Use emojis sparingly and tastefully.`;
+STRICT RULES:
+1. ONLY output the final flyer content. 
+2. DO NOT include any "thinking", "reasoning", "steps", or "inner monologue".
+3. DO NOT include headers like "**Reviewing the Draft...**" or "**Constructing a Design Prompt...**".
+4. If you are an image model, ensure the image you generate represents the flyer perfectly.
+5. Provide a clear, catchy title and well-structured details.
+6. Use a ${tone || 'peaceful'} and professional tone.
+7. Style: ${yogaStyle || 'General Yoga'}.`;
 
     const userContent = [];
     if (rawText) {
-      userContent.push({ type: 'text', text: `Here are my rough notes for the flyer: ${rawText}` });
+      userContent.push({ type: 'text', text: `POLISH THIS FLYER: ${rawText}` });
     } else {
-      userContent.push({ type: 'text', text: `Here is my rough flyer. Please polish it.` });
+      userContent.push({ type: 'text', text: `POLISH THE FLYER IN THIS IMAGE.` });
     }
 
     if (image) {
@@ -92,8 +91,22 @@ Guidelines:
             }, {
                 timeout: 55000 
             });
-            polishedFlyer = response.choices[0].message.content;
-            console.log(`Successfully generated with model: ${modelId}`);
+            
+            let content = response.choices[0].message.content;
+            
+            // CLEANING LOGIC: Strip out common Poe model reasoning steps
+            // This patterns matches bold headers that look like "Reviewing...", "Developing...", etc.
+            const reasoningPattern = /\*\*([^*]+)\*\*\s*(?:\n|$)/gi;
+            // Also strip common sentences used in "thinking" blocks
+            content = content.replace(/I'm focused on .+\./gi, '');
+            content = content.replace(/I'm now focusing on .+\./gi, '');
+            content = content.replace(/I'm presently .+\./gi, '');
+            content = content.replace(/I am now .+\./gi, '');
+            content = content.replace(/I have .+\./gi, '');
+            content = content.replace(reasoningPattern, '');
+            
+            polishedFlyer = content.trim();
+            console.log(`Successfully generated and cleaned with model: ${modelId}`);
             break; 
         } catch (err) {
             console.warn(`Model ${modelId} failed:`, err?.error?.message || err?.message);

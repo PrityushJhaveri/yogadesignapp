@@ -145,18 +145,48 @@ textarea:focus, select:focus {
 }
 
 .results-area {
-  white-space: pre-wrap;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--secondary);
+  line-height: 1.7;
 }
 
-.loader {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s linear infinite;
+.results-area p {
+  margin-bottom: 1.25rem;
+}
+
+.generated-image-container {
+  margin: 2rem 0;
+  text-align: center;
+  background: white;
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.generated-flyer-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.download-link {
+  display: inline-block;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--primary-light);
+  border-radius: 20px;
+  transition: var(--transition);
+}
+
+.download-link:hover {
+  background: var(--primary-light);
+  color: #FFF;
 }
 
 @keyframes spin {

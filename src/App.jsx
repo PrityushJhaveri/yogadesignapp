@@ -198,7 +198,7 @@ function App() {
       </main>
 
       <footer style={{ textAlign: 'center', marginTop: 'auto', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-        <p>Made for Mom with love & mindfulness.</p>
+        <p>Made for Mom with love.</p>
       </footer>
     </div>
   );

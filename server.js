@@ -89,24 +89,26 @@ STRICT RULES:
                 { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 55000 
+                timeout: 45000 // 45 seconds to fail faster
             });
             
             let content = response.choices[0].message.content;
+            console.log(`Raw response from ${modelId}:`, content.substring(0, 500) + '...');
             
             // CLEANING LOGIC: Strip out common Poe model reasoning steps
-            // This patterns matches bold headers that look like "Reviewing...", "Developing...", etc.
-            const reasoningPattern = /\*\*([^*]+)\*\*\s*(?:\n|$)/gi;
-            // Also strip common sentences used in "thinking" blocks
-            content = content.replace(/I'm focused on .+\./gi, '');
-            content = content.replace(/I'm now focusing on .+\./gi, '');
-            content = content.replace(/I'm presently .+\./gi, '');
-            content = content.replace(/I am now .+\./gi, '');
-            content = content.replace(/I have .+\./gi, '');
+            // Use non-greedy patterns and start-of-line anchors where possible
+            content = content.replace(/^I'm focused on .*?\./gmi, '');
+            content = content.replace(/^I'm now focusing on .*?\./gmi, '');
+            content = content.replace(/^I'm presently .*?\./gmi, '');
+            content = content.replace(/^I am now .*?\./gmi, '');
+            content = content.replace(/^I have .*?\./gmi, '');
+            
+            // Strip bold headers that look like thinking steps (usually 2-5 words)
+            const reasoningPattern = /^\*\*([^*]{3,40})\*\*\s*(?:\n|$)/gm;
             content = content.replace(reasoningPattern, '');
             
             polishedFlyer = content.trim();
-            console.log(`Successfully generated and cleaned with model: ${modelId}`);
+            console.log(`Cleaned response length: ${polishedFlyer.length}`);
             break; 
         } catch (err) {
             console.warn(`Model ${modelId} failed:`, err?.error?.message || err?.message);

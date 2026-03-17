@@ -69,9 +69,13 @@ Guidelines:
     };
   } catch (error) {
     console.error('Error generating flyer:', error);
+    
+    // Check if it's a Poe API error (like rate limit/high demand)
+    const errorMessage = error?.error?.message || error?.message || 'Failed to generate flyer. Please try again later.';
+    
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to generate flyer. Please try again later.' }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 };

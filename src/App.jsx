@@ -49,11 +49,15 @@ function App() {
       if (data.polishedFlyer) {
         setPolishedFlyer(data.polishedFlyer);
       } else {
-        alert(data.error || 'Something went wrong');
+        alert(data.error || 'Something went wrong on the server.');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to connect to the generator. Is the backend running?');
+      if (error instanceof SyntaxError) {
+        alert("Received HTML instead of JSON. Are you viewing the app on port 5173 instead of the Netlify Dev port (8888)? Check your browser URL!");
+      } else {
+        alert('Failed to connect to the generator. Is the backend running?');
+      }
     } finally {
       setIsGenerating(false);
     }

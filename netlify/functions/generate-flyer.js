@@ -6,7 +6,7 @@ export const handler = async (event, context) => {
   }
 
   try {
-    const { rawText, yogaStyle, tone } = JSON.parse(event.body);
+    const { rawText, yogaStyle, tone, image } = JSON.parse(event.body);
 
     const apiKey = process.env.POE_API_KEY;
     if (!apiKey) {
@@ -22,7 +22,7 @@ export const handler = async (event, context) => {
     });
 
     const systemPrompt = `You are a professional marketing specialist and yoga instructor assistant. 
-Your goal is to take rough, half-done flyer notes and turn them into a polished, professional, and inviting yoga flyer content.
+Your goal is to take rough, half-done flyer notes (and optionally an image of a flyer draft) and turn them into a polished, professional, and inviting yoga flyer content.
 
 Guidelines:
 - Maintain a ${tone || 'peaceful'} and professional tone.
@@ -31,15 +31,30 @@ Guidelines:
   1. A Catchy Title
   2. A Short Inviting Description
   3. Key Details (Date, Time, Location, What to Bring)
-  4. A clear Call to Action (e.g., "Register at link in bio")
-- Use emojis sparingly and tastefully to add a modern touch.
-- Keep the language inclusive and welcoming.`;
+  4. A clear Call to Action
+- Use emojis sparingly and tastefully.`;
+
+    const userContent = [];
+    if (rawText) {
+      userContent.push({ type: 'text', text: `Here are my rough notes for the flyer: ${rawText}` });
+    } else {
+      userContent.push({ type: 'text', text: `Here is my rough flyer. Please polish it.` });
+    }
+
+    if (image) {
+      userContent.push({
+        type: 'image_url',
+        image_url: {
+          url: image
+        }
+      });
+    }
 
     const response = await client.chat.completions.create({
       model: 'nano-banana-pro',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Here are my rough notes for the flyer: ${rawText}` },
+        { role: 'user', content: userContent },
       ],
     });
 

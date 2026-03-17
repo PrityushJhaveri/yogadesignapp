@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
-import { Sparkles, Leaf, Send, RefreshCw, Copy, Check } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Sparkles, Leaf, Copy, Check, Upload, X } from 'lucide-react';
 
 function App() {
   const [rawText, setRawText] = useState('');
   const [yogaStyle, setYogaStyle] = useState('Vinyasa Flow');
   const [tone, setTone] = useState('Peaceful & Inviting');
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [polishedFlyer, setPolishedFlyer] = useState('');
   const [copying, setCopying] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result); // base64 string
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleGenerate = async () => {
-    if (!rawText.trim()) return;
+    if (!rawText.trim() && !image) return;
     
     setIsGenerating(true);
     setPolishedFlyer('');
@@ -19,7 +42,7 @@ function App() {
       const response = await fetch('/.netlify/functions/generate-flyer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText, yogaStyle, tone }),
+        body: JSON.stringify({ rawText, yogaStyle, tone, image }),
       });
       
       const data = await response.json();
@@ -52,12 +75,55 @@ function App() {
 
       <main className="fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="card">
+          
+          <div className="input-group">
+            <label>Upload Draft (Optional)</label>
+            {!imagePreview ? (
+              <div 
+                style={{ 
+                  border: '2px dashed #E5E7EB', 
+                  borderRadius: '12px', 
+                  padding: '2rem', 
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  background: '#F9FAFB'
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={24} color="var(--primary)" style={{ margin: '0 auto 0.5rem' }} />
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Click to upload an image of a flyer</p>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageUpload} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                />
+              </div>
+            ) : (
+              <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                <img src={imagePreview} alt="Flyer preview" style={{ width: '100%', display: 'block' }} />
+                <button 
+                  onClick={removeImage}
+                  style={{ 
+                    position: 'absolute', top: '10px', right: '10px', 
+                    background: 'rgba(0,0,0,0.5)', color: 'white', 
+                    border: 'none', borderRadius: '50%', width: '30px', height: '30px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="input-group">
             <label htmlFor="notes">Rough Notes</label>
             <textarea
               id="notes"
-              rows="6"
-              placeholder="e.g. yoga class monday 5pm, church hall, $15, bring a mat and water..."
+              rows="4"
+              placeholder="e.g. yoga class monday 5pm, church hall, $15..."
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
             />
@@ -90,7 +156,7 @@ function App() {
           <button 
             className="btn" 
             onClick={handleGenerate} 
-            disabled={isGenerating || !rawText.trim()}
+            disabled={isGenerating || (!rawText.trim() && !image)}
           >
             {isGenerating ? (
               <div className="loader" />

@@ -39,24 +39,18 @@ function App() {
     setPolishedFlyer('');
     
     try {
-      const response = await fetch('/.netlify/functions/generate-flyer', {
+      const response = await fetch('/api/generate-flyer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText, yogaStyle, tone, image }),
       });
       
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
+      if (response.ok) {
         const data = await response.json();
-        if (data.polishedFlyer) {
-          setPolishedFlyer(data.polishedFlyer);
-        } else {
-          alert(data.error || 'Something went wrong on the server.');
-        }
+        setPolishedFlyer(data.polishedFlyer);
       } else {
-        const text = await response.text();
-        console.error("Non-JSON response received:", text);
-        alert("The AI is taking a bit too long to process your request (especially if you uploaded a photo). Please try again with simpler notes, or wait 30 seconds and try one more time!");
+        const errorData = await response.json().catch(() => ({}));
+        alert(errorData.error || 'The AI is busy or taking a bit too long. Please try again in 30 seconds!');
       }
     } catch (error) {
       console.error('Error:', error);

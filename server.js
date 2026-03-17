@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -16,6 +17,19 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Check if dist exists
+const distPath = path.join(__dirname, 'dist');
+if (!fs.existsSync(distPath)) {
+  console.warn('WARNING: dist folder NOT found at', distPath);
+} else {
+  console.log('SUCCESS: dist folder found at', distPath);
+}
 
 app.post('/api/generate-flyer', async (req, res) => {
   try {

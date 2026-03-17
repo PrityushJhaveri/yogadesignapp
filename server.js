@@ -67,11 +67,16 @@ STRICT RULES:
       });
     }
 
-    const modelsToTry = [
-      { id: 'nano-banana-2', vision: true },
-      { id: 'gpt-image-1.5', vision: true },
-      { id: 'gpt-4o-mini', vision: false }
-    ];
+    const modelsToTry = image 
+      ? [
+          { id: 'nano-banana-2', vision: true },
+          { id: 'gpt-image-1.5', vision: true },
+          { id: 'gpt-4o-mini', vision: false }
+        ]
+      : [
+          { id: 'gpt-4o-mini', vision: false },
+          { id: 'nano-banana-2', vision: false }
+        ];
     
     let polishedFlyer = null;
     let lastError = null;
@@ -89,26 +94,32 @@ STRICT RULES:
                 { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 45000 // 45 seconds to fail faster
+                timeout: 30000 // 30 seconds per model
             });
             
             let content = response.choices[0].message.content;
-            console.log(`Raw response from ${modelId}:`, content.substring(0, 500) + '...');
+            if (!content) throw new Error("Empty response from AI");
             
-            // CLEANING LOGIC: Strip out common Poe model reasoning steps
-            // Use non-greedy patterns and start-of-line anchors where possible
-            content = content.replace(/^I'm focused on .*?\./gmi, '');
-            content = content.replace(/^I'm now focusing on .*?\./gmi, '');
-            content = content.replace(/^I'm presently .*?\./gmi, '');
-            content = content.replace(/^I am now .*?\./gmi, '');
-            content = content.replace(/^I have .*?\./gmi, '');
+            console.log(`Raw response from ${modelId} (first 100 chars):`, content.substring(0, 100));
             
-            // Strip bold headers that look like thinking steps (usually 2-5 words)
-            const reasoningPattern = /^\*\*([^*]{3,40})\*\*\s*(?:\n|$)/gm;
-            content = content.replace(reasoningPattern, '');
+            try {
+                // CLEANING LOGIC
+                content = content.replace(/^I'm focused on .*?\./gmi, '');
+                content = content.replace(/^I'm now focusing on .*?\./gmi, '');
+                content = content.replace(/^I'm presently .*?\./gmi, '');
+                content = content.replace(/^I am now .*?\./gmi, '');
+                content = content.replace(/^I have .*?\./gmi, '');
+                
+                const reasoningPattern = /^\*\*([^*]{3,40})\*\*\s*(?:\n|$)/gm;
+                content = content.replace(reasoningPattern, '');
+                
+                polishedFlyer = content.trim();
+                console.log(`Successfully cleaned. Length: ${polishedFlyer.length}`);
+            } catch (cleanErr) {
+                console.error("Cleaning error:", cleanErr);
+                polishedFlyer = content.trim(); // Fallback to raw content
+            }
             
-            polishedFlyer = content.trim();
-            console.log(`Cleaned response length: ${polishedFlyer.length}`);
             break; 
         } catch (err) {
             console.warn(`Model ${modelId} failed:`, err?.error?.message || err?.message);

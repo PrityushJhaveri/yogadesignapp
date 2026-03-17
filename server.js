@@ -126,7 +126,9 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-const host = '0.0.0.0';
-app.listen(port, host, () => {
-  console.log(`Server running on http://${host}:${port}`);
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`🚀 Server ready on port ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

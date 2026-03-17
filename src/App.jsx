@@ -45,19 +45,22 @@ function App() {
         body: JSON.stringify({ rawText, yogaStyle, tone, image }),
       });
       
-      const data = await response.json();
-      if (data.polishedFlyer) {
-        setPolishedFlyer(data.polishedFlyer);
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await response.json();
+        if (data.polishedFlyer) {
+          setPolishedFlyer(data.polishedFlyer);
+        } else {
+          alert(data.error || 'Something went wrong on the server.');
+        }
       } else {
-        alert(data.error || 'Something went wrong on the server.');
+        const text = await response.text();
+        console.error("Non-JSON response received:", text);
+        alert("The server sent back an unexpected response (HTML instead of data). This usually means the backend function is still waking up or is misconfigured on Netlify. Please try again in 30 seconds!");
       }
     } catch (error) {
       console.error('Error:', error);
-      if (error instanceof SyntaxError) {
-        alert("Received HTML instead of JSON. Are you viewing the app on port 5173 instead of the Netlify Dev port (8888)? Check your browser URL!");
-      } else {
-        alert('Failed to connect to the generator. Is the backend running?');
-      }
+      alert('Failed to connect to the generator. Please check your internet or try again later.');
     } finally {
       setIsGenerating(false);
     }

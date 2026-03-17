@@ -94,6 +94,9 @@ Guidelines:
     
     return {
       statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ error: `All AI models are currently overwhelmed: ${errorMessage}` }),
     };
   }

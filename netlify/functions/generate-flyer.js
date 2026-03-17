@@ -50,16 +50,35 @@ Guidelines:
       });
     }
 
-    const response = await client.chat.completions.create({
-      model: 'nano-banana-2',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userContent },
-      ],
-    });
+    const modelsToTry = ['nano-banana-2', 'grok-imagine-image', 'gpt-image-1.5'];
+    
+    let polishedFlyer = null;
+    let lastError = null;
 
-    const polishedFlyer = response.choices[0].message.content;
+    for (const model of modelsToTry) {
+        try {
+            console.log(`Attempting generation with model: ${model}`);
+            const response = await client.chat.completions.create({
+              model: model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userContent },
+              ],
+            });
+            polishedFlyer = response.choices[0].message.content;
+            console.log(`Successfully generated with model: ${model}`);
+            break; // Exit loop on success
+        } catch (err) {
+            console.warn(`Model ${model} failed:`, err?.error?.message || err?.message);
+            lastError = err;
+            // Continue to the next model in the array
+        }
+    }
 
+    if (!polishedFlyer) {
+        throw lastError || new Error("All fallback models failed.");
+    }
+    
     return {
       statusCode: 200,
       headers: {
@@ -75,7 +94,7 @@ Guidelines:
     
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: errorMessage }),
+      body: JSON.stringify({ error: `All AI models are currently overwhelmed: ${errorMessage}` }),
     };
   }
 };

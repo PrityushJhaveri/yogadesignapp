@@ -18,25 +18,12 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
+// Routes
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
-
-// Check if dist exists
-const distPath = path.join(__dirname, 'dist');
-console.log('--- DIAGNOSTICS ---');
-console.log('Current directory:', __dirname);
-console.log('Files in current directory:', fs.readdirSync(__dirname));
-console.log('PORT env:', process.env.PORT);
-
-if (!fs.existsSync(distPath)) {
-  console.warn('WARNING: dist folder NOT found at', distPath);
-} else {
-  console.log('SUCCESS: dist folder found at', distPath);
-  console.log('Files in dist:', fs.readdirSync(distPath));
-}
-console.log('-------------------');
 
 app.post('/api/generate-flyer', async (req, res) => {
   try {
@@ -90,13 +77,10 @@ Guidelines:
     let polishedFlyer = null;
     let lastError = null;
 
-    // On Railway, we don't have the 10s Netlify limit, so we can be more generous.
-    // However, we still want a good UX, so we'll use a 60s total timeout for the entire request.
     for (const modelInfo of modelsToTry) {
         const modelId = modelInfo.id;
         try {
             console.log(`Attempting generation with model: ${modelId}`);
-            
             const filteredContent = modelInfo.vision ? userContent : userContent.filter(c => c.type === 'text');
 
             const response = await client.chat.completions.create({
@@ -106,7 +90,7 @@ Guidelines:
                 { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 55000 // 55 seconds per model attempt, total capped by express if needed
+                timeout: 55000 
             });
             polishedFlyer = response.choices[0].message.content;
             console.log(`Successfully generated with model: ${modelId}`);
@@ -128,14 +112,12 @@ Guidelines:
   }
 });
 
-// Handle SPA routing
-app.use((req, res) => {
+// Catch-all for SPA
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
-
 
 const host = '0.0.0.0';
 app.listen(port, host, () => {
   console.log(`🚀 Server ready on http://${host}:${port}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

@@ -58,7 +58,8 @@ Guidelines:
     const start = Date.now();
     for (const model of modelsToTry) {
         try {
-            console.log(`Attempting generation with model: ${model} (4s timeout)`);
+            const currentTimeout = model === modelsToTry[0] ? 8000 : 1500;
+            console.log(`Attempting generation with model: ${model} (${currentTimeout}ms timeout)`);
             const response = await client.chat.completions.create({
               model: model,
               messages: [
@@ -66,7 +67,7 @@ Guidelines:
                 { role: 'user', content: userContent },
               ],
             }, {
-                timeout: 4000 // 4 seconds per model
+                timeout: currentTimeout
             });
             polishedFlyer = response.choices[0].message.content;
             console.log(`Successfully generated with model: ${model}`);

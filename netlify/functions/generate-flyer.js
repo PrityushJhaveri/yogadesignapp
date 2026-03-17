@@ -51,7 +51,7 @@ Guidelines:
     }
 
     const response = await client.chat.completions.create({
-      model: 'nano-banana-pro',
+      model: 'nano-banana-2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent },

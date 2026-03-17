@@ -50,7 +50,7 @@ Guidelines:
       });
     }
 
-    const modelsToTry = ['nano-banana-2', 'grok-imagine-image'];
+    const modelsToTry = ['nano-banana-2', 'grok-imagine-image', 'gpt-image-1.5'];
     
     let polishedFlyer = null;
     let lastError = null;
@@ -58,8 +58,7 @@ Guidelines:
     const start = Date.now();
     for (const model of modelsToTry) {
         try {
-            const currentTimeout = model === modelsToTry[0] ? 8000 : 1500;
-            console.log(`Attempting generation with model: ${model} (${currentTimeout}ms timeout)`);
+            console.log(`Attempting generation with model: ${model} (60s timeout)`);
             const response = await client.chat.completions.create({
               model: model,
               messages: [
@@ -67,7 +66,7 @@ Guidelines:
                 { role: 'user', content: userContent },
               ],
             }, {
-                timeout: currentTimeout
+                timeout: 60000 // 60 seconds
             });
             polishedFlyer = response.choices[0].message.content;
             console.log(`Successfully generated with model: ${model}`);

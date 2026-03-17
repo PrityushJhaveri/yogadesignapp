@@ -50,30 +50,34 @@ Guidelines:
       });
     }
 
-    const modelsToTry = ['nano-banana-2', 'grok-imagine-image', 'gpt-image-1.5'];
+    const modelsToTry = ['nano-banana-2', 'grok-imagine-image'];
     
     let polishedFlyer = null;
     let lastError = null;
 
+    const start = Date.now();
     for (const model of modelsToTry) {
         try {
-            console.log(`Attempting generation with model: ${model}`);
+            console.log(`Attempting generation with model: ${model} (4s timeout)`);
             const response = await client.chat.completions.create({
               model: model,
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userContent },
               ],
+            }, {
+                timeout: 4000 // 4 seconds per model
             });
             polishedFlyer = response.choices[0].message.content;
             console.log(`Successfully generated with model: ${model}`);
-            break; // Exit loop on success
+            break; 
         } catch (err) {
-            console.warn(`Model ${model} failed:`, err?.error?.message || err?.message);
+            console.warn(`Model ${model} failed or timed out:`, err?.error?.message || err?.message);
             lastError = err;
-            // Continue to the next model in the array
         }
     }
+    const duration = Date.now() - start;
+    console.log(`Generation completed in ${duration}ms`);
 
     if (!polishedFlyer) {
         throw lastError || new Error("All fallback models failed.");

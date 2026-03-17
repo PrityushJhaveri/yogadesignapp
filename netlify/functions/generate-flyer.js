@@ -50,29 +50,48 @@ Guidelines:
       });
     }
 
-    const modelsToTry = ['nano-banana-2', 'grok-imagine-image', 'gpt-image-1.5'];
+    const modelsToTry = [
+      { id: 'nano-banana-2', vision: true },
+      { id: 'gpt-image-1.5', vision: true },
+      { id: 'gpt-4o-mini', vision: false } // Ultra-fast text safety valve
+    ];
     
     let polishedFlyer = null;
     let lastError = null;
 
     const start = Date.now();
-    for (const model of modelsToTry) {
+    for (const modelInfo of modelsToTry) {
+        const modelId = modelInfo.id;
+        const elapsed = Date.now() - start;
+        const remainingBudget = 9500 - elapsed; // 9.5s total budget
+        
+        if (remainingBudget < 500) break; 
+
+        // Vision models get up to 7s/2s, text-only gets 1s max
+        const currentTimeout = modelId === 'nano-banana-2' ? Math.min(7000, remainingBudget) : 
+                              modelId === 'gpt-image-1.5' ? Math.min(2000, remainingBudget) : 
+                              remainingBudget;
+
         try {
-            console.log(`Attempting generation with model: ${model} (60s timeout)`);
+            console.log(`Attempting generation with model: ${modelId} (${currentTimeout}ms timeout)`);
+            
+            // Filter out image for non-vision models to save payload/processing time
+            const filteredContent = modelInfo.vision ? userContent : userContent.filter(c => c.type === 'text');
+
             const response = await client.chat.completions.create({
-              model: model,
+              model: modelId,
               messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: userContent },
+                { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 60000 // 60 seconds
+                timeout: currentTimeout
             });
             polishedFlyer = response.choices[0].message.content;
-            console.log(`Successfully generated with model: ${model}`);
+            console.log(`Successfully generated with model: ${modelId}`);
             break; 
         } catch (err) {
-            console.warn(`Model ${model} failed or timed out:`, err?.error?.message || err?.message);
+            console.warn(`Model ${modelId} failed or timed out:`, err?.error?.message || err?.message);
             lastError = err;
         }
     }
@@ -80,7 +99,7 @@ Guidelines:
     console.log(`Generation completed in ${duration}ms`);
 
     if (!polishedFlyer) {
-        throw lastError || new Error("All fallback models failed.");
+        throw lastError || new Error("The AI models are taking too long to respond. Please try again with simpler notes or without a photo.");
     }
     
     return {

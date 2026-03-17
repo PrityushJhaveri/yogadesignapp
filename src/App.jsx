@@ -56,7 +56,7 @@ function App() {
       } else {
         const text = await response.text();
         console.error("Non-JSON response received:", text);
-        alert("The server sent back an unexpected response (HTML instead of data). This usually means the backend function is still waking up or is misconfigured on Netlify. Please try again in 30 seconds!");
+        alert("The AI is taking a bit too long to process your request (especially if you uploaded a photo). Please try again with simpler notes, or wait 30 seconds and try one more time!");
       }
     } catch (error) {
       console.error('Error:', error);

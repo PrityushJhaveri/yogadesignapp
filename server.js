@@ -79,6 +79,7 @@ STRICT RULES:
             console.log(`Attempting generation with model: ${modelId}`);
             const filteredContent = modelInfo.vision ? userContent : userContent.filter(c => c.type === 'text');
 
+            console.log(`Payload size: ${JSON.stringify(filteredContent).length} bytes`);
             const response = await client.chat.completions.create({
               model: modelId,
               messages: [
@@ -86,7 +87,7 @@ STRICT RULES:
                 { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 30000 // 30 seconds for the single attempt
+                timeout: 27000 // 27 seconds max to stay under Railway's 30s
             });
             
             let content = response.choices[0].message.content;

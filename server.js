@@ -65,19 +65,15 @@ STRICT RULES:
       });
     }
 
-    // Prioritize models that are known for high-quality image output on Poe
+    // Use only nano-banana-2 as requested
     const modelsToTry = [
-      { id: 'Playground-v2.5', vision: true, imageGen: true },
-      { id: 'nano-banana-2', vision: true },
-      { id: 'gpt-image-1.5', vision: true },
-      { id: 'gpt-4o-mini', vision: false }
+      { id: 'nano-banana-2', vision: true }
     ];
     
     let polishedFlyer = null;
     let lastError = null;
 
-    // We only try ONE or TWO models to stay under the 30s Railway proxy timeout
-    for (const modelInfo of modelsToTry.slice(0, 2)) {
+    for (const modelInfo of modelsToTry) {
         const modelId = modelInfo.id;
         try {
             console.log(`Attempting generation with model: ${modelId}`);
@@ -90,7 +86,7 @@ STRICT RULES:
                 { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 25000 // 25 seconds max to avoid 502
+                timeout: 30000 // 30 seconds for the single attempt
             });
             
             let content = response.choices[0].message.content;

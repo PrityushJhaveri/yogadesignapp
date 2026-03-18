@@ -40,22 +40,20 @@ app.post('/api/generate-flyer', async (req, res) => {
     });
 
     const systemPrompt = `You are a professional marketing specialist and yoga instructor assistant. 
-Your goal is to turn rough flyer notes into a polished, professional, and inviting yoga flyer.
+Your primary goal is to generate a visual, professional, and inviting yoga flyer.
 
 STRICT RULES:
-1. ONLY output the final flyer content. 
-2. DO NOT include any "thinking", "reasoning", "steps", or "inner monologue".
-3. DO NOT include headers like "**Reviewing the Draft...**" or "**Constructing a Design Prompt...**".
-4. If you are an image model, ensure the image you generate represents the flyer perfectly.
-5. Provide a clear, catchy title and well-structured details.
-6. Use a ${tone || 'peaceful'} and professional tone.
-7. Style: ${yogaStyle || 'General Yoga'}.`;
+1. YOU MUST GENERATE A VISUAL IMAGE OF THE FLYER.
+2. The image should include all relevant details: Catchy Title, Schedule, Location, and Call to Action.
+3. OUTPUT ONLY the markdown image link (e.g., ![Flyer](https://url)) and a short description.
+4. DO NOT include "thinking", "reasoning", or "steps".
+5. Style: ${yogaStyle || 'General Yoga'}. Tone: ${tone || 'peaceful'}.`;
 
     const userContent = [];
     if (rawText) {
-      userContent.push({ type: 'text', text: `POLISH THIS FLYER: ${rawText}` });
+      userContent.push({ type: 'text', text: `CREATE A VISUAL FLYER IMAGE FOR THIS: ${rawText}` });
     } else {
-      userContent.push({ type: 'text', text: `POLISH THE FLYER IN THIS IMAGE.` });
+      userContent.push({ type: 'text', text: `ENHANCE AND GENERATE A FINAL VISUAL FLYER BASED ON THIS IMAGE.` });
     }
 
     if (image) {
@@ -67,21 +65,19 @@ STRICT RULES:
       });
     }
 
-    const modelsToTry = image 
-      ? [
-          { id: 'nano-banana-2', vision: true },
-          { id: 'gpt-image-1.5', vision: true },
-          { id: 'gpt-4o-mini', vision: false }
-        ]
-      : [
-          { id: 'gpt-4o-mini', vision: false },
-          { id: 'nano-banana-2', vision: false }
-        ];
+    // Prioritize models that are known for high-quality image output on Poe
+    const modelsToTry = [
+      { id: 'Playground-v2.5', vision: true, imageGen: true },
+      { id: 'nano-banana-2', vision: true },
+      { id: 'gpt-image-1.5', vision: true },
+      { id: 'gpt-4o-mini', vision: false }
+    ];
     
     let polishedFlyer = null;
     let lastError = null;
 
-    for (const modelInfo of modelsToTry) {
+    // We only try ONE or TWO models to stay under the 30s Railway proxy timeout
+    for (const modelInfo of modelsToTry.slice(0, 2)) {
         const modelId = modelInfo.id;
         try {
             console.log(`Attempting generation with model: ${modelId}`);
@@ -94,7 +90,7 @@ STRICT RULES:
                 { role: 'user', content: filteredContent },
               ],
             }, {
-                timeout: 30000 // 30 seconds per model
+                timeout: 25000 // 25 seconds max to avoid 502
             });
             
             let content = response.choices[0].message.content;
@@ -103,7 +99,7 @@ STRICT RULES:
             console.log(`Raw response from ${modelId} (first 100 chars):`, content.substring(0, 100));
             
             try {
-                // CLEANING LOGIC
+                // CLEANING LOGIC (Defensive)
                 content = content.replace(/^I'm focused on .*?\./gmi, '');
                 content = content.replace(/^I'm now focusing on .*?\./gmi, '');
                 content = content.replace(/^I'm presently .*?\./gmi, '');
@@ -117,24 +113,26 @@ STRICT RULES:
                 console.log(`Successfully cleaned. Length: ${polishedFlyer.length}`);
             } catch (cleanErr) {
                 console.error("Cleaning error:", cleanErr);
-                polishedFlyer = content.trim(); // Fallback to raw content
+                polishedFlyer = content.trim(); 
             }
             
             break; 
         } catch (err) {
             console.warn(`Model ${modelId} failed:`, err?.error?.message || err?.message);
             lastError = err;
+            // If the first model times out, we likely don't have time for a second one on Railway.
+            // But we'll try one more if it's a fast model.
         }
     }
 
     if (!polishedFlyer) {
-        return res.status(500).json({ error: lastError?.message || "Failed to generate flyer content." });
+        return res.status(500).json({ error: lastError?.message || "Generation timed out. Please try again." });
     }
     
     res.json({ polishedFlyer });
   } catch (error) {
-    console.error('Error generating flyer:', error);
-    res.status(500).json({ error: 'An internal server error occurred.' });
+    console.error('Error in /api/generate-flyer:', error);
+    res.status(500).json({ error: 'Server error. Please check POE_API_KEY and try again.' });
   }
 });
 
